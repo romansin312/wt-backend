@@ -2,11 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/julienschmidt/httprouter"
+	"romansin312.wt-web/internal/data"
 )
 
 var upgrader = websocket.Upgrader{
@@ -51,6 +54,64 @@ func (app *application) actionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Printf("Received message: %v", r.Body)
+}
+
+func (app *application) createHandler(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Id       uuid.UUID
+		VideoUrl string
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	decoder.Decode(&input)
+
+	err := app.models.Rooms.Insert(&data.Room{
+		Id:       input.Id,
+		VideoUrl: input.VideoUrl,
+	})
+
+	if err != nil {
+		fmt.Print(err)
+	}
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+}
+
+func (app *application) getRoomHandler(w http.ResponseWriter, r *http.Request) {
+	params := httprouter.ParamsFromContext(r.Context())
+
+	idStr := params.ByName("roomId")
+	if idStr == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	room, err := app.models.Rooms.Get(id)
+	if err != nil {
+		fmt.Println(err)
+		switch {
+		case errors.Is(err, data.RoomNotFoundError):
+			http.NotFound(w, r)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+
+		}
+
+		return
+	}
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	encoder := json.NewEncoder(w)
+	err = encoder.Encode(room)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
 
 func (app *application) subscribeHandler(w http.ResponseWriter, r *http.Request) {

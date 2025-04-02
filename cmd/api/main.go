@@ -1,12 +1,17 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"time"
+
+	_ "github.com/lib/pq"
+	"romansin312.wt-web/internal/data"
 )
 
 const version = "1.0.0"
@@ -19,6 +24,7 @@ type config struct {
 type application struct {
 	config config
 	logger *log.Logger
+	models data.Models
 }
 
 func main() {
@@ -26,13 +32,41 @@ func main() {
 
 	flag.IntVar(&cfg.port, "port", 4000, "Api server port")
 	flag.StringVar(&cfg.env, "env", "developemnt", "Environment")
+
+	var dbName string
+	flag.StringVar(&dbName, "dbName", "", "Database Name")
+
+	var pgLogin string
+	flag.StringVar(&pgLogin, "pgLogin", "", "Database Login")
+
+	var pgPassword string
+	flag.StringVar(&pgPassword, "pgPassword", "", "Database Password")
+
 	flag.Parse()
+
+	if dbName == "" {
+		panic("Database Name is not provided")
+	}
+	if dbName == "" {
+		panic("Database Login is not provided")
+	}
+	if dbName == "" {
+		panic("Database Password is not provided")
+	}
+
+	connStr := fmt.Sprintf("postgres://%s:%s@localhost/%s?sslmode=disable", pgLogin, pgPassword, dbName)
+
+	db, err := initDB(connStr)
+	if err != nil {
+		panic(err)
+	}
 
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
 
 	app := &application{
 		config: cfg,
 		logger: logger,
+		models: data.NewModels(db),
 	}
 
 	srv := &http.Server{
@@ -44,6 +78,23 @@ func main() {
 	}
 
 	logger.Printf("starting %s server on %s", cfg.env, srv.Addr)
-	err := srv.ListenAndServe()
+	err = srv.ListenAndServe()
 	logger.Fatal(err)
+}
+
+func initDB(connStr string) (*sql.DB, error) {
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err = db.PingContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
 }

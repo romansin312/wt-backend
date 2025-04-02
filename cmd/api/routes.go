@@ -11,6 +11,8 @@ func (app *application) routes() *httprouter.Router {
 
 	router.HandlerFunc(http.MethodPost, "/room/:roomId/action", app.actionHandler)
 	router.HandlerFunc(http.MethodGet, "/room/:roomId/subscribe", app.subscribeHandler)
+	router.HandlerFunc(http.MethodGet, "/room/:roomId/get", app.getRoomHandler)
+	router.HandlerFunc(http.MethodPost, "/rooms/create", app.createHandler)
 
 	return router
 }
