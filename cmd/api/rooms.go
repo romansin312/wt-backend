@@ -132,7 +132,6 @@ func (app *application) subscribeHandler(w http.ResponseWriter, r *http.Request)
 	fmt.Printf("Client has been subscribed on room %s\n", id)
 
 	go pingConnection(conn)
-
 }
 
 func pingConnection(conn *websocket.Conn) {
