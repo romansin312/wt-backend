@@ -42,7 +42,6 @@ func (app *application) actionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	for conn := range clientsToRoom {
 		if clientsToRoom[conn] == id {
 
@@ -73,8 +72,6 @@ func (app *application) createHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Print(err)
 	}
-
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 }
 
 func (app *application) getRoomHandler(w http.ResponseWriter, r *http.Request) {
@@ -105,7 +102,6 @@ func (app *application) getRoomHandler(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	encoder := json.NewEncoder(w)
 	err = encoder.Encode(room)
@@ -124,7 +120,6 @@ func (app *application) subscribeHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	clientsToRoom[conn] = id
 	fmt.Printf("Client has been subscribed on room %s\n", id)
 }

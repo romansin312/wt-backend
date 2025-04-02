@@ -6,7 +6,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-func (app *application) routes() *httprouter.Router {
+func (app *application) routes() http.Handler {
 	router := httprouter.New()
 
 	router.HandlerFunc(http.MethodPost, "/room/:roomId/action", app.actionHandler)
@@ -14,5 +14,5 @@ func (app *application) routes() *httprouter.Router {
 	router.HandlerFunc(http.MethodGet, "/room/:roomId/get", app.getRoomHandler)
 	router.HandlerFunc(http.MethodPost, "/rooms/create", app.createHandler)
 
-	return router
+	return app.enableCORS(router)
 }
