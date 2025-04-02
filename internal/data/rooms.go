@@ -22,11 +22,12 @@ func (r RoomModel) Insert(room *Room) error {
 	query := `
 		INSERT INTO "rooms" ("Id", "VideoUrl")
 		VALUES ($1, $2)
+		RETURNING "Id"
 	`
 
 	args := []any{uuid.New(), room.VideoUrl}
 
-	return r.DB.QueryRow(query, args...).Err()
+	return r.DB.QueryRow(query, args...).Scan(&room.Id)
 }
 
 func (r RoomModel) Get(id uuid.UUID) (*Room, error) {

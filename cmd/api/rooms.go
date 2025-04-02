@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -64,14 +65,21 @@ func (app *application) createHandler(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	decoder.Decode(&input)
 
-	err := app.models.Rooms.Insert(&data.Room{
+	room := data.Room{
 		Id:       input.Id,
 		VideoUrl: input.VideoUrl,
-	})
+	}
+	err := app.models.Rooms.Insert(&room)
 
 	if err != nil {
 		fmt.Print(err)
 	}
+
+	response, err := room.Id.MarshalText()
+	if err != nil {
+		fmt.Print(err)
+	}
+	w.Write(response)
 }
 
 func (app *application) getRoomHandler(w http.ResponseWriter, r *http.Request) {
@@ -122,4 +130,30 @@ func (app *application) subscribeHandler(w http.ResponseWriter, r *http.Request)
 
 	clientsToRoom[conn] = id
 	fmt.Printf("Client has been subscribed on room %s\n", id)
+
+	go pingConnection(conn)
+
+}
+
+func pingConnection(conn *websocket.Conn) {
+	defer conn.Close()
+
+	attempts := 1
+	for {
+		println("Ping connection")
+		err := conn.WriteMessage(websocket.TextMessage, []byte("Ping"))
+		if err != nil {
+			fmt.Printf("Error occured, an attempt is %d\n", attempts)
+			attempts++
+		} else {
+			attempts = 1
+		}
+
+		if attempts > 3 {
+			println("Attempts is more than 3, closing connection")
+			return
+		}
+
+		time.Sleep(5 * time.Second)
+	}
 }
