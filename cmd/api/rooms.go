@@ -11,19 +11,27 @@ import (
 	"romansin312.wt-web/internal/data"
 )
 
-func (app *application) actionHandler(w http.ResponseWriter, r *http.Request) {
+func parseRoomId(w http.ResponseWriter, r *http.Request) (uuid.UUID, error) {
 	params := httprouter.ParamsFromContext(r.Context())
 
 	idStr := params.ByName("roomId")
 	if idStr == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		return
+		return uuid.Nil, errors.New("roomId is not provided")
 	}
 
 	id, err := uuid.Parse(idStr)
 	if err != nil {
+		return uuid.Nil, err
+	}
+
+	return id, nil
+}
+
+func (app *application) actionHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := parseRoomId(w, r)
+	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		return
 	}
 
 	message := actionMessage{}
@@ -67,18 +75,9 @@ func (app *application) createHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) getRoomHandler(w http.ResponseWriter, r *http.Request) {
-	params := httprouter.ParamsFromContext(r.Context())
-
-	idStr := params.ByName("roomId")
-	if idStr == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	id, err := uuid.Parse(idStr)
+	id, err := parseRoomId(w, r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		return
 	}
 
 	room, err := app.models.Rooms.Get(id)
@@ -103,18 +102,9 @@ func (app *application) getRoomHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) subscribeHandler(w http.ResponseWriter, r *http.Request) {
-
-	params := httprouter.ParamsFromContext(r.Context())
-	idStr := params.ByName("roomId")
-	if idStr == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	id, err := uuid.Parse(idStr)
+	id, err := parseRoomId(w, r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		return
 	}
 
 	app.roomSyncer.addConnection(id, w, r)
