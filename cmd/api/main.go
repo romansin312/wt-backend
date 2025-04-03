@@ -22,9 +22,10 @@ type config struct {
 }
 
 type application struct {
-	config config
-	logger *log.Logger
-	models data.Models
+	config     config
+	logger     *log.Logger
+	models     data.Models
+	roomSyncer roomSyncer
 }
 
 func main() {
@@ -64,10 +65,13 @@ func main() {
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
 
 	app := &application{
-		config: cfg,
-		logger: logger,
-		models: data.NewModels(db),
+		config:     cfg,
+		logger:     logger,
+		models:     data.NewModels(db),
+		roomSyncer: CreateSyncer(),
 	}
+
+	go app.roomSyncer.startConnectionsKicker()
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf("localhost:%d", cfg.port),
