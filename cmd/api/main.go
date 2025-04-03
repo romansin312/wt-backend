@@ -13,6 +13,7 @@ import (
 	_ "github.com/lib/pq"
 	"romansin312.wt-web/internal/data"
 	roomssyncer "romansin312.wt-web/internal/rooms_syncer"
+	"romansin312.wt-web/internal/workers"
 )
 
 const version = "1.0.0"
@@ -72,7 +73,8 @@ func main() {
 		roomSyncer: roomssyncer.CreateSyncer(),
 	}
 
-	go app.roomSyncer.StartConnectionsKicker()
+	go workers.StartConnectionsKicker(&app.roomSyncer)
+	go workers.StartRoomsKicker(&app.models)
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf("localhost:%d", cfg.port),

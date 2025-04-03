@@ -9,7 +9,7 @@ import (
 	roomssyncer "romansin312.wt-web/internal/rooms_syncer"
 )
 
-func startConnectionsKicker(syncer *roomssyncer.RoomSyncer) {
+func StartConnectionsKicker(syncer *roomssyncer.RoomSyncer) {
 	var pingRoomAttempts map[uuid.UUID]int32 = make(map[uuid.UUID]int32)
 	for {
 		var connectionsToRemove []*websocket.Conn
