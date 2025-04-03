@@ -12,6 +12,7 @@ import (
 
 	_ "github.com/lib/pq"
 	"romansin312.wt-web/internal/data"
+	roomssyncer "romansin312.wt-web/internal/rooms_syncer"
 )
 
 const version = "1.0.0"
@@ -25,7 +26,7 @@ type application struct {
 	config     config
 	logger     *log.Logger
 	models     data.Models
-	roomSyncer roomSyncer
+	roomSyncer roomssyncer.RoomSyncer
 }
 
 func main() {
@@ -68,10 +69,10 @@ func main() {
 		config:     cfg,
 		logger:     logger,
 		models:     data.NewModels(db),
-		roomSyncer: CreateSyncer(),
+		roomSyncer: roomssyncer.CreateSyncer(),
 	}
 
-	go app.roomSyncer.startConnectionsKicker()
+	go app.roomSyncer.StartConnectionsKicker()
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf("localhost:%d", cfg.port),
