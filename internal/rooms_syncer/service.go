@@ -42,6 +42,15 @@ func (syncer *RoomSyncer) AddConnection(roomId uuid.UUID, userId int32, w http.R
 		UserId: userId,
 		RoomId: roomId,
 	}
+
+	connectedMessage := models.ActionMessage{
+		SenderUserId: userId,
+		Timestamp:    time.Now().UTC().Unix(),
+		ActionType:   models.UserConnected,
+		ActionInfo:   "",
+		RoomId:       roomId,
+	}
+	syncer.actionMessagesBuffer <- &connectedMessage
 }
 
 func (syncer *RoomSyncer) GetMessage() *models.ActionMessage {

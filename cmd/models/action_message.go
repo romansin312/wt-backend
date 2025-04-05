@@ -8,6 +8,7 @@ const (
 	Play ActionType = iota
 	Pause
 	Progress
+	UserConnected
 	UserDisconnected
 )
 
