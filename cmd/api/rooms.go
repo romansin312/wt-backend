@@ -39,7 +39,7 @@ func (app *application) actionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.roomSyncer.SyncRoom(&message)
+	go app.roomSyncer.SyncRoom(&message)
 
 	fmt.Printf("Received message: %v\n", r.Body)
 }

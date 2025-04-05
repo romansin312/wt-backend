@@ -1,7 +1,6 @@
 package roomssyncer
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -9,18 +8,20 @@ import (
 )
 
 type RoomSyncer struct {
-	ClientsToRoom map[*websocket.Conn]uuid.UUID
-	Upgrader      websocket.Upgrader
+	clientsToRoom        map[*websocket.Conn]uuid.UUID
+	Upgrader             websocket.Upgrader
+	actionMessagesBuffer chan *ActionMessage
 }
 
 func CreateSyncer() RoomSyncer {
 	return RoomSyncer{
-		ClientsToRoom: make(map[*websocket.Conn]uuid.UUID),
+		clientsToRoom: make(map[*websocket.Conn]uuid.UUID),
 		Upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
 			CheckOrigin:     func(r *http.Request) bool { return true },
 		},
+		actionMessagesBuffer: make(chan *ActionMessage, 100),
 	}
 }
 
@@ -33,18 +34,27 @@ type ActionMessage struct {
 }
 
 func (syncer *RoomSyncer) SyncRoom(message *ActionMessage) {
-	roomId := message.RoomId
-	for conn := range syncer.ClientsToRoom {
-		if syncer.ClientsToRoom[conn] == roomId {
-			sendingMessage, err := json.Marshal(message)
-			if err == nil {
-				conn.WriteMessage(websocket.TextMessage, sendingMessage)
-			}
-		}
-	}
+	syncer.actionMessagesBuffer <- message
 }
 
 func (syncer *RoomSyncer) AddConnection(roomId uuid.UUID, w http.ResponseWriter, r *http.Request) {
 	conn, _ := syncer.Upgrader.Upgrade(w, r, nil)
-	syncer.ClientsToRoom[conn] = roomId
+	syncer.clientsToRoom[conn] = roomId
+}
+
+func (syncer *RoomSyncer) GetMessage() *ActionMessage {
+	return <-syncer.actionMessagesBuffer
+}
+
+func (syncer *RoomSyncer) GetConnectionsToRoomMap() map[*websocket.Conn]uuid.UUID {
+	result := make(map[*websocket.Conn]uuid.UUID)
+	for i := range syncer.clientsToRoom {
+		result[i] = syncer.clientsToRoom[i]
+	}
+
+	return result
+}
+
+func (syncer *RoomSyncer) RemoveConnection(conn *websocket.Conn) {
+	delete(syncer.clientsToRoom, conn)
 }

@@ -12,10 +12,12 @@ import (
 func StartConnectionsKicker(syncer *roomssyncer.RoomSyncer) {
 	var pingRoomAttempts map[uuid.UUID]int32 = make(map[uuid.UUID]int32)
 	for {
-		var connectionsToRemove []*websocket.Conn
-		for conn := range syncer.ClientsToRoom {
+		clientsToRoom := syncer.GetConnectionsToRoomMap()
+		fmt.Printf("Number of active connections is %d\n", len(clientsToRoom))
+
+		for conn := range clientsToRoom {
 			println("Ping connection")
-			roomId := syncer.ClientsToRoom[conn]
+			roomId := clientsToRoom[conn]
 			if pingRoomAttempts[roomId] == 0 {
 				pingRoomAttempts[roomId] = 1
 			}
@@ -28,17 +30,12 @@ func StartConnectionsKicker(syncer *roomssyncer.RoomSyncer) {
 				pingRoomAttempts[roomId] = 1
 			}
 
-			if pingRoomAttempts[syncer.ClientsToRoom[conn]] > 3 {
+			if pingRoomAttempts[clientsToRoom[conn]] > 3 {
 				println("Attempts is more than 3, closing connection")
 				conn.Close()
-				connectionsToRemove = append(connectionsToRemove, conn)
 				delete(pingRoomAttempts, roomId)
+				syncer.RemoveConnection(conn)
 			}
-		}
-
-		fmt.Printf("Number of connections to remove is %d\n", len(connectionsToRemove))
-		for _, conn := range connectionsToRemove {
-			delete(syncer.ClientsToRoom, conn)
 		}
 
 		time.Sleep(5 * time.Second)

@@ -75,6 +75,7 @@ func main() {
 
 	go workers.StartConnectionsKicker(&app.roomSyncer)
 	go workers.StartRoomsKicker(&app.models)
+	go workers.StartRoomsSyncerWorker(&app.roomSyncer)
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf("localhost:%d", cfg.port),
