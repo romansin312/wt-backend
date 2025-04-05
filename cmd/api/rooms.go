@@ -5,11 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
+	"romansin312.wt-web/cmd/models"
 	"romansin312.wt-web/internal/data"
-	roomssyncer "romansin312.wt-web/internal/rooms_syncer"
 )
 
 func parseRoomId(w http.ResponseWriter, r *http.Request) (uuid.UUID, error) {
@@ -30,7 +31,7 @@ func parseRoomId(w http.ResponseWriter, r *http.Request) (uuid.UUID, error) {
 }
 
 func (app *application) actionHandler(w http.ResponseWriter, r *http.Request) {
-	message := roomssyncer.ActionMessage{}
+	message := models.ActionMessage{}
 
 	err := json.NewDecoder(r.Body).Decode(&message)
 	if err != nil {
@@ -103,7 +104,13 @@ func (app *application) subscribeHandler(w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(http.StatusBadRequest)
 	}
 
-	app.roomSyncer.AddConnection(id, w, r)
+	userIdStr := r.URL.Query().Get("userId")
+	userId, err := strconv.ParseInt(userIdStr, 10, 32)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+
+	app.roomSyncer.AddConnection(id, int32(userId), w, r)
 
 	fmt.Printf("Client has been subscribed on room %s\n", id)
 }
