@@ -29,13 +29,13 @@ type ActionMessage struct {
 	Timestamp    int64
 	ActionType   int32
 	ActionInfo   string
+	RoomId       uuid.UUID
 }
 
-func (syncer *RoomSyncer) SyncRoom(roomId uuid.UUID, message *ActionMessage) {
-
+func (syncer *RoomSyncer) SyncRoom(message *ActionMessage) {
+	roomId := message.RoomId
 	for conn := range syncer.ClientsToRoom {
 		if syncer.ClientsToRoom[conn] == roomId {
-
 			sendingMessage, err := json.Marshal(message)
 			if err == nil {
 				conn.WriteMessage(websocket.TextMessage, sendingMessage)

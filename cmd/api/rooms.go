@@ -30,21 +30,16 @@ func parseRoomId(w http.ResponseWriter, r *http.Request) (uuid.UUID, error) {
 }
 
 func (app *application) actionHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := parseRoomId(w, r)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-	}
-
 	message := roomssyncer.ActionMessage{}
 
-	err = json.NewDecoder(r.Body).Decode(&message)
+	err := json.NewDecoder(r.Body).Decode(&message)
 	if err != nil {
 		fmt.Printf("%v", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	app.roomSyncer.SyncRoom(id, &message)
+	app.roomSyncer.SyncRoom(&message)
 
 	fmt.Printf("Received message: %v\n", r.Body)
 }
