@@ -73,7 +73,6 @@ func main() {
 		roomSyncer: roomssyncer.CreateSyncer(),
 	}
 
-	go workers.StartConnectionsKicker(&app.roomSyncer)
 	go workers.StartRoomsKicker(&app.models)
 	go workers.StartRoomsSyncerWorker(&app.roomSyncer)
 

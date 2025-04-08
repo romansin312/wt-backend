@@ -15,7 +15,8 @@ func StartRoomsSyncerWorker(roomsSyncer *roomssyncer.RoomSyncer) {
 		roomId := message.RoomId
 		connectionsToClient := roomsSyncer.GetConnectionsToClientMap()
 		for conn := range connectionsToClient {
-			if connectionsToClient[conn].RoomId == roomId {
+			clientInfo := connectionsToClient[conn]
+			if clientInfo.RoomId == roomId && clientInfo.UserId != message.SenderUserId {
 				sendingMessage, err := json.Marshal(message)
 				if err == nil {
 					conn.WriteMessage(websocket.TextMessage, sendingMessage)

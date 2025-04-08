@@ -110,7 +110,18 @@ func (app *application) subscribeHandler(w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(http.StatusBadRequest)
 	}
 
-	app.roomSyncer.AddConnection(id, int32(userId), w, r)
+	conn := app.roomSyncer.AddConnection(id, int32(userId), w, r)
 
 	fmt.Printf("Client has been subscribed on room %s\n", id)
+
+	defer app.roomSyncer.RemoveConnection(conn)
+
+	for {
+		message := models.ActionMessage{}
+		err := conn.ReadJSON(&message)
+		if err != nil {
+			return
+		}
+		app.roomSyncer.SyncRoom(&message)
+	}
 }

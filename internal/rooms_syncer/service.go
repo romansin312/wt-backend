@@ -36,7 +36,7 @@ func (syncer *RoomSyncer) SyncRoom(message *models.ActionMessage) {
 	syncer.actionMessagesBuffer <- message
 }
 
-func (syncer *RoomSyncer) AddConnection(roomId uuid.UUID, userId int32, w http.ResponseWriter, r *http.Request) {
+func (syncer *RoomSyncer) AddConnection(roomId uuid.UUID, userId int32, w http.ResponseWriter, r *http.Request) *websocket.Conn {
 	conn, _ := syncer.Upgrader.Upgrade(w, r, nil)
 	syncer.connectionsToClients[conn] = ClientModel{
 		UserId: userId,
@@ -51,6 +51,8 @@ func (syncer *RoomSyncer) AddConnection(roomId uuid.UUID, userId int32, w http.R
 		RoomId:       roomId,
 	}
 	syncer.actionMessagesBuffer <- &connectedMessage
+
+	return conn
 }
 
 func (syncer *RoomSyncer) GetMessage() *models.ActionMessage {
